@@ -40,9 +40,21 @@ async function run() {
     });
     app.get("/room_details/:roomId", async (request, response) => {
       const roomId = request.params.roomId;
-      const query = {_id: new ObjectId(roomId)};
+      const query = { _id: new ObjectId(roomId) };
       const room = await all_rooms.findOne(query);
       response.send(room);
+    });
+    app.put("/room_details/:roomId", async (request, response) => {
+      const roomId = request.params.roomId;
+      const updatedData = request.body;
+      const result = await all_rooms.updateOne(
+        { _id: new ObjectId(roomId) },
+        {$set: updatedData},
+      );
+      response.json({
+        success: true,
+        message: "Room successfully updated!",
+      });
     });
     app.post("/add_room", async (request, response) => {
       const roomData = request.body;
@@ -55,7 +67,7 @@ async function run() {
     });
     app.post("/my_listings", async (request, response) => {
       const userEmail = request.body.email;
-      const query = {"user.email": userEmail};
+      const query = { "user.email": userEmail };
       const emailBasedRooms = await all_rooms.find(query).toArray();
       console.log(emailBasedRooms);
       response.send(emailBasedRooms);
