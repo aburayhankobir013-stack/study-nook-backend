@@ -1,5 +1,5 @@
 const express = require("express");
-const { MongoClient, ServerApiVersion } = require("mongodb");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const cors = require("cors");
 const dotenv = require("dotenv");
 
@@ -34,6 +34,16 @@ async function run() {
       const limitedRooms = await all_rooms.find().limit(8).toArray();
       response.send(limitedRooms);
     });
+    app.get("/rooms", async (request, response) => {
+      const rooms = await all_rooms.find().toArray();
+      response.send(rooms);
+    });
+    app.get("/room_details/:roomId", async (request, response) => {
+      const roomId = request.params.roomId;
+      const query = {_id: new ObjectId(roomId)};
+      const room = await all_rooms.findOne(query);
+      response.send(room);
+    });
     app.post("/add_room", async (request, response) => {
       const roomData = request.body;
       const data = await all_rooms.insertOne(roomData);
@@ -42,6 +52,13 @@ async function run() {
         message: "Successfully room published",
         insertedId: data.insertedId,
       });
+    });
+    app.post("/my_listings", async (request, response) => {
+      const userEmail = request.body.email;
+      const query = {"user.email": userEmail};
+      const emailBasedRooms = await all_rooms.find(query).toArray();
+      console.log(emailBasedRooms);
+      response.send(emailBasedRooms);
     });
   } finally {
     // await client.close();
