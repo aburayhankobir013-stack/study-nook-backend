@@ -54,7 +54,23 @@ async function run() {
       response.json({
         success: true,
         message: "Room successfully updated!",
-      });
+      }); 
+    });
+    app.delete("/room_details/:roomId", async (request, response) => {
+      try {
+        const roomId = request.params.roomId;
+        const query = {_id: new  ObjectId(roomId)};
+        const result = await all_rooms.deleteOne(query);
+        response.json({
+          success: true,
+          message: "Successfully deleted room!"
+        });
+      } catch (error) {
+        response.json({
+          success: false,
+          message: "Faild to delete room!"
+        });
+      }
     });
     app.post("/add_room", async (request, response) => {
       const roomData = request.body;
