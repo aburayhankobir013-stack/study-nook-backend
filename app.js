@@ -44,31 +44,59 @@ async function run() {
       const room = await all_rooms.findOne(query);
       response.send(room);
     });
+ 
+    // PUST REQUEST HANDLE
     app.put("/room_details/:roomId", async (request, response) => {
-      const roomId = request.params.roomId;
-      const updatedData = request.body;
-      const result = await all_rooms.updateOne(
-        { _id: new ObjectId(roomId) },
-        {$set: updatedData},
-      );
-      response.json({
-        success: true,
-        message: "Room successfully updated!",
-      }); 
+      try {
+        const {roomId} = request.params;
+        const updatedData = request.body;
+        
+        if (!ObjectId.isValid(roomId)) {
+          return response.status(400).json({
+            success: false,
+            message: "Invalid Room Id!",
+          });
+        }
+
+        const result = await all_rooms.updateOne(
+          {_id: new ObjectId(roomId)},
+          {$set: updatedData,}
+        );
+
+        if (result.matchedCount === 0) {
+          return response.status(404).json({
+            success: false,
+            message: "Room not found!",
+          });
+        }
+
+        return response.status(200).json({
+          success: true,
+          message: "Room successfully updated!",
+          modifiedCount: result.modifiedCount,
+        });
+
+      } catch (error) {
+        console.error(`Update room error: ${error}`);
+        return response.status(500).json({
+          success: false,
+          message: "Internal server error!",
+        });
+      }
     });
     app.delete("/room_details/:roomId", async (request, response) => {
       try {
         const roomId = request.params.roomId;
-        const query = {_id: new  ObjectId(roomId)};
+        const query = { _id: new ObjectId(roomId) };
         const result = await all_rooms.deleteOne(query);
         response.json({
           success: true,
-          message: "Successfully deleted room!"
+          message: "Successfully deleted room!",
         });
       } catch (error) {
         response.json({
           success: false,
-          message: "Faild to delete room!"
+          message: "Faild to delete room!",
         });
       }
     });
@@ -85,7 +113,6 @@ async function run() {
       const userEmail = request.body.email;
       const query = { "user.email": userEmail };
       const emailBasedRooms = await all_rooms.find(query).toArray();
-      console.log(emailBasedRooms);
       response.send(emailBasedRooms);
     });
   } finally {
