@@ -30,27 +30,34 @@ async function run() {
     await client.db("admin").command({ ping: 1 });
     const all_roomsDB = client.db("all_roomsDB");
     const all_rooms = all_roomsDB.collection("all_rooms");
+    const all_bookings = all_roomsDB.collection("all_bookings");
+
+    // LIMITED ROOMS ROUTE
     app.get("/", async (request, response) => {
       const limitedRooms = await all_rooms.find().limit(8).toArray();
       response.send(limitedRooms);
     });
+
+    // ALL ROOMS ROTUE
     app.get("/rooms", async (request, response) => {
       const rooms = await all_rooms.find().toArray();
       response.send(rooms);
     });
+
+    // SINGLE ROOM ROUTE
     app.get("/room_details/:roomId", async (request, response) => {
       const roomId = request.params.roomId;
       const query = { _id: new ObjectId(roomId) };
       const room = await all_rooms.findOne(query);
       response.send(room);
     });
- 
+
     // PUST REQUEST HANDLE
     app.put("/room_details/:roomId", async (request, response) => {
       try {
-        const {roomId} = request.params;
+        const { roomId } = request.params;
         const updatedData = request.body;
-        
+
         if (!ObjectId.isValid(roomId)) {
           return response.status(400).json({
             success: false,
@@ -59,8 +66,8 @@ async function run() {
         }
 
         const result = await all_rooms.updateOne(
-          {_id: new ObjectId(roomId)},
-          {$set: updatedData,}
+          { _id: new ObjectId(roomId) },
+          { $set: updatedData },
         );
 
         if (result.matchedCount === 0) {
@@ -75,7 +82,6 @@ async function run() {
           message: "Room successfully updated!",
           modifiedCount: result.modifiedCount,
         });
-
       } catch (error) {
         console.error(`Update room error: ${error}`);
         return response.status(500).json({
@@ -84,6 +90,8 @@ async function run() {
         });
       }
     });
+
+    // DELETE ROUTE
     app.delete("/room_details/:roomId", async (request, response) => {
       try {
         const roomId = request.params.roomId;
@@ -100,6 +108,57 @@ async function run() {
         });
       }
     });
+
+    app.post("/room_details/:roomId", async (request, response) => {
+      const {
+        price,
+        startTime,
+        endTime,
+        status,
+        bookingDate,
+        roomDetails: { _id, room_name, image_url },
+        user: { sessionEmail },
+      } = request.body;
+
+      const storeBookingData = {
+        price,
+        startTime,
+        endTime,
+        status,
+        bookingDate,
+        roomDetails: {
+          _id: new ObjectId(_id),
+          room_name,
+          image_url,
+        },
+        user: {
+          sessionEmail,
+        }
+      };
+
+      const existingBookings = await all_bookings.findOne(
+        {
+          startTime,
+          endTime,
+          bookingDate,
+          "roomDetails._id" : new ObjectId(_id)
+        }
+      );
+      if (existingBookings) {
+        return response.json({
+          success: false,
+          message: "Already booked!"
+        });
+      } else {
+        const result = await all_bookings.insertOne(storeBookingData);
+        return response.json({
+          success: true,
+          message: "Booking confirmed!"
+        });
+      }
+    });
+
+    // ROOM CREATION ROUTE
     app.post("/add_room", async (request, response) => {
       const roomData = request.body;
       const data = await all_rooms.insertOne(roomData);
@@ -109,6 +168,8 @@ async function run() {
         insertedId: data.insertedId,
       });
     });
+
+    // MY LISTINGS ROUTE
     app.post("/my_listings", async (request, response) => {
       const userEmail = request.body.email;
       const query = { "user.email": userEmail };
