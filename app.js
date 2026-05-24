@@ -109,6 +109,7 @@ async function run() {
       }
     });
 
+    // BOOKING ROUTE
     app.post("/room_details/:roomId", async (request, response) => {
       const {
         price,
@@ -133,29 +134,63 @@ async function run() {
         },
         user: {
           sessionEmail,
-        }
+        },
       };
 
-      const existingBookings = await all_bookings.findOne(
-        {
-          startTime,
-          endTime,
-          bookingDate,
-          "roomDetails._id" : new ObjectId(_id)
-        }
-      );
+      const existingBookings = await all_bookings.findOne({
+        startTime,
+        endTime,
+        bookingDate,
+        "roomDetails._id": new ObjectId(_id),
+      });
       if (existingBookings) {
         return response.json({
           success: false,
-          message: "Already booked!"
+          message: "Already booked!",
         });
       } else {
         const result = await all_bookings.insertOne(storeBookingData);
         return response.json({
           success: true,
-          message: "Booking confirmed!"
+          message: "Booking confirmed!",
         });
       }
+    });
+
+    // GET ALL BOOKINGS
+    app.get("/my_bookings", async (request, response) => {
+      const email = request.query.email;
+      const query = { "user.sessionEmail": email };
+      const result = await all_bookings.find(query).toArray();
+      response.send(result);
+    });
+
+    // UPDATE STATUS ROUTE
+    app.patch("/my_bookings/:bookingId", async (request, response) => {
+      const { bookingId } = request.params;
+      console.log(bookingId);
+      const updatedStatus = request.body;
+      const result = await all_bookings.updateOne(
+        { _id: new ObjectId(bookingId) },
+        {
+          $set: updatedStatus,
+        },
+      );
+      return response.json({
+        success: true,
+        message: "Status updated!",
+      });
+    });
+
+    // DELETE BOOKING ROUTE
+    app.delete("/my_bookings/:bookingId", async (request, response) => {
+      const {bookingId} = request.params;
+      const query = {_id: new ObjectId(bookingId)};
+      const result = await all_bookings.deleteOne(query);
+      return response.json({
+        success: true,
+        message: "Booking successfully deleted!"
+      }); 
     });
 
     // ROOM CREATION ROUTE
