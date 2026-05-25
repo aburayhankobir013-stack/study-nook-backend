@@ -97,6 +97,7 @@ async function run() {
         const roomId = request.params.roomId;
         const query = { _id: new ObjectId(roomId) };
         const result = await all_rooms.deleteOne(query);
+        const relatedBookingsDelete = await all_bookings.deleteMany({"roomDetails._id": new ObjectId(roomId)});
         response.json({
           success: true,
           message: "Successfully deleted room!",
