@@ -26,8 +26,8 @@ const client = new MongoClient(MONGODB_URI, {
 
 async function run() {
   try {
-    await client.connect();
-    await client.db("admin").command({ ping: 1 });
+    // await client.connect();
+    // await client.db("admin").command({ ping: 1 });
     const all_roomsDB = client.db("all_roomsDB");
     const all_rooms = all_roomsDB.collection("all_rooms");
     const all_bookings = all_roomsDB.collection("all_bookings");
