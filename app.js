@@ -169,7 +169,6 @@ async function run() {
     // UPDATE STATUS ROUTE
     app.patch("/my_bookings/:bookingId", async (request, response) => {
       const { bookingId } = request.params;
-      console.log(bookingId);
       const updatedStatus = request.body;
       const result = await all_bookings.updateOne(
         { _id: new ObjectId(bookingId) },
